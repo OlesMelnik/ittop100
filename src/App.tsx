@@ -1,26 +1,48 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react'
+import { apiKey } from './credentials'
+import { LinearProgress } from '@mui/material'
+import { Conversion, Header } from './components'
+import axios from 'axios'
+import './App.css'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const getLatestCurrency = async (onSuccess: any, onError: any, setLoading: any) => {
+	try {
+		const url = 'https://api.apilayer.com/exchangerates_data/latest?symbols=USD,EUR,UAH&base=UAH'
+		const result = await axios.get(url, {
+			headers: { apiKey: apiKey },
+		})
+		onSuccess(result.data.rates)
+	} catch {
+		onError(true)
+	} finally {
+		setLoading(false)
+	}
 }
 
-export default App;
+function App() {
+	const [currency, setCurrency] = useState<any>(null)
+	const [loading, setLoading] = useState<any>(true)
+	const [error, setError] = useState<boolean>(false)
+
+	useEffect(() => {
+		getLatestCurrency(setCurrency, setError, setLoading)
+	}, [])
+
+	if (loading)
+		return (
+			<div className="progress-wrapper">
+				<LinearProgress />
+			</div>
+		)
+
+	if (error) return <div>there was some error</div>
+
+	return (
+		<div className="App">
+			<Header currency={currency} />
+			{currency && <Conversion currency={currency} />}
+		</div>
+	)
+}
+
+export default App
